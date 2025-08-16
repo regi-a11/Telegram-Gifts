@@ -11,7 +11,7 @@ import math
 import asyncio
 import typing
 import os
-TOKEN = os.getenv("TELEGRAM_TOKEN")
+BOT_TOKENS = os.getenv("BOT_TOKENS").split(",")
 
 from parse_data import get_all_star_gifts, check_is_star_gift_upgradable
 from star_gifts_data import StarGiftData, StarGiftsData
