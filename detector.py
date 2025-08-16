@@ -1,17 +1,16 @@
+import asyncio
+import typing
+import os
+import math
+from functools import partial
+from itertools import cycle, groupby
+from bisect import bisect_left
+from io import BytesIO
+
 from pyrogram import Client, types
 from pyrogram.errors import FloodWait
 from httpx import AsyncClient, TimeoutException
 from pytz import timezone as _timezone
-from io import BytesIO
-from itertools import cycle, groupby
-from bisect import bisect_left
-from functools import partial
-
-import math
-import asyncio
-import typing
-import os
-BOT_TOKENS = os.getenv("BOT_TOKENS").split(",")
 
 from parse_data import get_all_star_gifts, check_is_star_gift_upgradable
 from star_gifts_data import StarGiftData, StarGiftsData
@@ -53,7 +52,6 @@ logger = utils.get_logger(
     file_log_level=config.FILE_LOG_LEVEL
 )
 
-
 # ==================== Patched Function ====================
 # This function wraps app.download_media to handle FloodWait exceptions automatically.
 async def safe_download_media(app: Client, *args: typing.Any, **kwargs: typing.Any) -> BytesIO | None:
@@ -67,20 +65,17 @@ async def safe_download_media(app: Client, *args: typing.Any, **kwargs: typing.A
             logger.warning(f"FloodWait triggered, sleeping for {e.value} seconds before retrying.")
             await asyncio.sleep(e.value)
 
-
 @typing.overload
 async def bot_send_request(
         method: str,
         data: dict[str, typing.Any] | None
 ) -> dict[str, typing.Any]: ...
 
-
 @typing.overload
 async def bot_send_request(
         method: typing.Literal["editMessageText"],
         data: dict[str, typing.Any]
 ) -> dict[str, typing.Any] | None: ...
-
 
 async def bot_send_request(
         method: str,
@@ -105,7 +100,6 @@ async def bot_send_request(
 
         except TimeoutException:
             logger.warning(f"Timeout exception while sending request {method} with data: {data}")
-
             continue
 
         if response.get("ok"):
@@ -117,7 +111,6 @@ async def bot_send_request(
 
     raise RuntimeError(f"Failed to send request to Telegram API: {response}")
 
-
 async def detector(
         app: Client,
         new_gift_callback: typing.Callable[[StarGiftData], typing.Coroutine[None, None, typing.Any]] | None = None,
@@ -128,9 +121,6 @@ async def detector(
 
     while True:
         logger.debug("Checking for new gifts / updates...")
-
-        if not app.is_connected:
-            await app.start()
 
         _, all_star_gifts_dict = await get_all_star_gifts(app)
 
@@ -158,7 +148,6 @@ async def detector(
                 if new_star_gift is None:
                     logger.warning("Star gift not found in new gifts, skipping for updating",
                                    extra={"star_gift_id": str(star_gift_id)})
-
                     continue
 
                 new_star_gift.message_id = old_star_gift.message_id
@@ -170,7 +159,6 @@ async def detector(
             await star_gifts_data_saver(list(new_star_gifts.values()))
 
         await asyncio.sleep(config.CHECK_INTERVAL)
-
 
 def get_notify_text(star_gift: StarGiftData) -> str:
     is_limited = star_gift.is_limited
@@ -224,7 +212,6 @@ def get_notify_text(star_gift: StarGiftData) -> str:
         convert_price=utils.pretty_int(star_gift.convert_price)
     )
 
-
 async def process_new_gift(app: Client, star_gift: StarGiftData) -> None:
     # Patched call to safe_download_media
     binary = typing.cast(BytesIO, await safe_download_media(
@@ -255,7 +242,6 @@ async def process_new_gift(app: Client, star_gift: StarGiftData) -> None:
 
     star_gift.message_id = response["message_id"]
 
-
 async def process_update_gifts(update_gifts_queue: UPDATE_GIFTS_QUEUE_T) -> None:
     while True:
         new_star_gifts: list[StarGiftData] = []
@@ -263,17 +249,13 @@ async def process_update_gifts(update_gifts_queue: UPDATE_GIFTS_QUEUE_T) -> None
         while True:
             try:
                 _, new_star_gift = update_gifts_queue.get_nowait()
-
                 new_star_gifts.append(new_star_gift)
-
                 update_gifts_queue.task_done()
-
             except asyncio.QueueEmpty:
                 break
 
         if not new_star_gifts:
             await asyncio.sleep(0.1)
-
             continue
 
         new_star_gifts.sort(
@@ -307,9 +289,7 @@ async def process_update_gifts(update_gifts_queue: UPDATE_GIFTS_QUEUE_T) -> None
 
         await star_gifts_data_saver(new_star_gifts)
 
-
 star_gifts_data_saver_lock = asyncio.Lock()
-
 
 async def star_gifts_data_saver(star_gifts: StarGiftData | list[StarGiftData]) -> None:
     global STAR_GIFTS_DATA, last_star_gifts_data_saved_time
@@ -328,7 +308,6 @@ async def star_gifts_data_saver(star_gifts: StarGiftData | list[StarGiftData]) -
 
             if pos < len(updated_gifts_list) and updated_gifts_list[pos].id == star_gift.id:
                 updated_gifts_list[pos] = star_gift
-
             else:
                 updated_gifts_list.insert(pos, star_gift)
 
@@ -336,11 +315,8 @@ async def star_gifts_data_saver(star_gifts: StarGiftData | list[StarGiftData]) -
 
         if last_star_gifts_data_saved_time is None or last_star_gifts_data_saved_time + config.DATA_SAVER_DELAY < utils.get_current_timestamp():
             STAR_GIFTS_DATA.save()
-
             last_star_gifts_data_saved_time = utils.get_current_timestamp()
-
             logger.debug("Saved star gifts data file")
-
 
 async def star_gifts_upgrades_checker(app: Client) -> None:
     while True:
@@ -354,7 +330,6 @@ async def star_gifts_upgrades_checker(app: Client) -> None:
                     star_gift_id=star_gift_id
             ):
                 logger.info(f"Star gift {star_gift_id} is upgradable")
-
                 logger.debug(f"Sending upgrade notification for star gift {star_gift_id} (msg #{star_gift.message_id})")
 
                 # Patched call to safe_download_media
@@ -387,16 +362,12 @@ async def star_gifts_upgrades_checker(app: Client) -> None:
                 )
 
                 star_gift.is_upgradable = True
-
                 await star_gifts_data_saver(star_gift)
-
                 await asyncio.sleep(config.NOTIFY_AFTER_TEXT_DELAY)
-
             else:
                 logger.debug(f"Star gift {star_gift_id} is not upgradable")
 
         await asyncio.sleep(config.CHECK_UPGRADES_PER_CYCLE)
-
 
 async def logger_wrapper(coro: typing.Awaitable[T]) -> T | None:
     try:
@@ -404,19 +375,20 @@ async def logger_wrapper(coro: typing.Awaitable[T]) -> T | None:
     except Exception as ex:
         logger.exception(f"""Error in {getattr(coro, "__name__", coro)}: {ex}""")
 
-
 async def main() -> None:
     logger.info("Starting gifts detector...")
 
+    # Use the session string for authentication to avoid interactive login prompts
     app = Client(
         name=config.SESSION_NAME,
         api_id=config.API_ID,
         api_hash=config.API_HASH,
+        session_string=config.SESSION_STRING,
         sleep_threshold=60
     )
 
     await app.start()
-
+    
     update_gifts_queue = (
         UPDATE_GIFTS_QUEUE_T()
         if BOTS_AMOUNT > 0 else
@@ -429,7 +401,6 @@ async def main() -> None:
                 update_gifts_queue=update_gifts_queue
             )
         ))
-
     else:
         logger.info("No bots available, skipping update gifts processing")
 
@@ -437,7 +408,6 @@ async def main() -> None:
         asyncio.create_task(logger_wrapper(
             star_gifts_upgrades_checker(app)
         ))
-
     else:
         logger.info("Upgrades channel is not set, skipping star gifts upgrades checking")
 
@@ -446,7 +416,6 @@ async def main() -> None:
         new_gift_callback=partial(process_new_gift, app),
         update_gifts_queue=update_gifts_queue
     )
-
 
 if __name__ == "__main__":
     try:
