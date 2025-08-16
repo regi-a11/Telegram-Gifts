@@ -4,9 +4,7 @@
 
 TG Gifts Notifier is a tool designed to notify users about new gifts available on the Telegram platform. It helps users stay updated and never miss out on any gifts.
 
-Our Main Telegram Channel — [Gifts Detector](https://t.me/gifts_detector)
-
-Our Upgrades Telegram Channel — [Gifts Upgrades Detector](https://t.me/gifts_upgrades_detector)
+Our Upgrades Telegram Group — [Gifts Upgrades Detector](https://t.me/+y2MnmqW38JZmNjdl)
 
 ## Features
 
@@ -23,13 +21,13 @@ To install TG Gifts Notifier, follow these steps:
 1. Clone the repository:
 
     ```sh
-    git clone https://github.com/arynyklas/tg_gifts_notifier.git
+    git clone https://github.com/regi-a11/Telegram-Gifts.git
     ```
 
 2. Navigate to the project directory:
 
     ```sh
-    cd tg_gifts_notifier
+    cd tg_gifts_notifier-master
     ```
 
 3. Install the required dependencies:
