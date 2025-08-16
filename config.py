@@ -3,7 +3,6 @@ import os
 import constants
 from pathlib import Path
 from pyrogram import Client
-from pyrogram.session import StringSession
 
 # --- Environment Variable Check ---
 # Get the session string from environment variables.
