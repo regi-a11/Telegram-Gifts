@@ -3,10 +3,8 @@
 **test**
 *.sh
 *.txt
-*.json
-*.session*
+*.session*  
 *.service
-config*.py
 logs/
 
 !requirements.txt
